@@ -1,6 +1,43 @@
 import { chatEl } from "./domRefs.js";
 import { getVideoId, thumbUrl } from "../utils/youtube.js";
 
+let loadingMessageEl = null;
+
+export function showLoadingStatus(text, container = chatEl) {
+  if (!container) return;
+
+  hideLoadingStatus();
+
+  loadingMessageEl = document.createElement("div");
+  loadingMessageEl.className = "msg loading";
+  loadingMessageEl.setAttribute("role", "status");
+  loadingMessageEl.setAttribute("aria-live", "polite");
+  loadingMessageEl.innerHTML = `
+    <div class="role">assistant</div>
+    <div class="loading-status">
+      <span class="spinner" aria-hidden="true"></span>
+      <div class="status-text">
+        ${text}
+        <span class="dots" aria-hidden="true">
+          <span class="dot"></span>
+          <span class="dot"></span>
+          <span class="dot"></span>
+        </span>
+      </div>
+    </div>
+  `.trim();
+
+  container.appendChild(loadingMessageEl);
+  container.scrollTop = container.scrollHeight;
+}
+
+export function hideLoadingStatus() {
+  if (loadingMessageEl?.parentNode) {
+    loadingMessageEl.parentNode.removeChild(loadingMessageEl);
+  }
+  loadingMessageEl = null;
+}
+
 export function pushMessage(role, text, container = chatEl) {
   if (!container) return;
 

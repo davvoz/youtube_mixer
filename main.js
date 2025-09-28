@@ -19,7 +19,7 @@ import {
 import { getVideoId, checkVideoAvailability } from "./scripts/utils/youtube.js";
 import { showNotification } from "./scripts/utils/notifications.js";
 import { renderPanel } from "./scripts/ui/playlistRenderer.js";
-import { pushMessage, renderSuggestions } from "./scripts/ui/chat.js";
+import { pushMessage, renderSuggestions, showLoadingStatus, hideLoadingStatus } from "./scripts/ui/chat.js";
 import {
   loadSettingsUI,
   updateProviderUI,
@@ -37,6 +37,7 @@ import {
   clearBtn,
   chatForm,
   chatInput,
+  chatEl,
   recommendBtn,
   themeBtn,
   settingsBtn,
@@ -52,6 +53,37 @@ import {
   callOpenAIModel
 } from "./scripts/services/llmProviders.js";
 import { validateSuggestions } from "./scripts/services/recommendationService.js";
+
+const chatSubmitBtn = chatForm?.querySelector('button[type="submit"]');
+const originalRecommendLabel = recommendBtn?.innerHTML || "💡 Suggerisci";
+const originalChatSubmitLabel = chatSubmitBtn?.innerHTML || "📨 Invia";
+const originalChatPlaceholder = chatInput?.getAttribute("placeholder") || "Descrivi ciò che vuoi guardare...";
+let isRecommendationLoading = false;
+
+function setRecommendationLoading(isLoading) {
+  isRecommendationLoading = isLoading;
+
+  if (recommendBtn) {
+    recommendBtn.disabled = isLoading;
+    recommendBtn.innerHTML = isLoading ? "✨ Sto preparando idee..." : originalRecommendLabel;
+  }
+
+  if (chatSubmitBtn) {
+    chatSubmitBtn.disabled = isLoading;
+    chatSubmitBtn.innerHTML = isLoading ? "⌛ In attesa..." : originalChatSubmitLabel;
+  }
+
+  if (chatInput) {
+    chatInput.disabled = isLoading;
+    chatInput.placeholder = isLoading
+      ? "Sto cercando video perfetti per te..."
+      : originalChatPlaceholder;
+  }
+
+  if (chatEl) {
+    chatEl.setAttribute("aria-busy", isLoading ? "true" : "false");
+  }
+}
 
 async function addToPlaylist(side, url, title = "") {
   const id = getVideoId(url);
@@ -109,6 +141,8 @@ function pushChatContext(text) {
 }
 
 async function getRecommendations(promptText = "") {
+  if (isRecommendationLoading) return;
+
   const historySummary = [
     ...leftState.list.map((v) => `A:${v.url}`),
     ...rightState.list.map((v) => `B:${v.url}`)
@@ -137,7 +171,12 @@ Richiesta utente: ${promptText || "Suggerisci 6 video rilevanti da guardare ades
   addUserContext(userPrompt);
 
   try {
-    pushMessage("assistant", "Sto cercando suggerimenti...");
+    const loadingText = promptText
+      ? "Sto analizzando la tua richiesta e setacciando YouTube"
+      : "Sto esplorando nuovi video in sintonia con le tue playlist";
+
+    setRecommendationLoading(true);
+    showLoadingStatus(loadingText);
 
     let result;
     const messages = getConversationHistory();
@@ -179,6 +218,8 @@ Richiesta utente: ${promptText || "Suggerisci 6 video rilevanti da guardare ades
 
     const { valid, fallbacks, invalid, replacements } = await validateSuggestions(result.suggestions || []);
 
+    hideLoadingStatus();
+
     if (replacements.length) {
       pushMessage(
         "assistant",
@@ -200,7 +241,10 @@ Richiesta utente: ${promptText || "Suggerisci 6 video rilevanti da guardare ades
     });
   } catch (error) {
     console.error("Recommendation error:", error);
+    hideLoadingStatus();
     pushMessage("assistant", `Errore nel generare suggerimenti: ${error.message}`);
+  } finally {
+    setRecommendationLoading(false);
   }
 }
 
