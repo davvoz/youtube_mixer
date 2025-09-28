@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="it">
+
+<head>
+  <meta charset="utf-8" />
+  <title>YouTube Mixer senza API</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+
+<body>
+  <header class="topbar">
+    <div class="brand">YT Mixer</div>
+    <div class="actions">
+      <button id="settingsBtn" class="btn secondary">⚙️ Impostazioni</button>
+      <button id="themeBtn" class="btn secondary" aria-pressed="false">🌙 Dark</button>
+      <button id="swapBtn" class="btn">🔄 Scambia</button>
+      <button id="clearBtn" class="btn secondary">🗑️ Pulisci</button>
+    </div>
+  </header>
+
+  <main class="grid">
+    <section class="panel" id="leftPanel" data-label="A">
+      <div class="video-wrap">
+        <iframe id="leftPlayer" class="player" src="" title="YouTube video player"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          allowfullscreen></iframe>
+      </div>
+      <div class="playlist">
+        <div class="playlist-header">
+          <h2>Playlist A</h2>
+          <form id="leftForm" class="add-form">
+            <input id="leftUrl" type="url" placeholder="Incolla URL YouTube" required />
+            <button class="btn" type="submit">➕ Aggiungi</button>
+          </form>
+        </div>
+        <ul id="leftList" class="list"></ul>
+      </div>
+    </section>
+
+    <section class="panel" id="rightPanel" data-label="B">
+      <div class="video-wrap">
+        <iframe id="rightPlayer" class="player" src="" title="YouTube video player"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          allowfullscreen></iframe>
+      </div>
+      <div class="playlist">
+        <div class="playlist-header">
+          <h2>Playlist B</h2>
+          <form id="rightForm" class="add-form">
+            <input id="rightUrl" type="url" placeholder="Incolla URL YouTube" required />
+            <button class="btn" type="submit">➕ Aggiungi</button>
+          </form>
+        </div>
+        <ul id="rightList" class="list"></ul>
+      </div>
+    </section>
+  </main>
+
+  <section class="chatbot">
+    <div class="chat-header">
+      <h2>Consigli Video</h2>
+      <div class="llm-status">
+        <span id="llmIndicator" class="llm-badge">WebSim</span>
+        <button id="recommendBtn" class="btn">💡 Suggerisci</button>
+      </div>
+    </div>
+    <div id="chat" class="chat"></div>
+    <form id="chatForm" class="chat-form">
+      <input id="chatInput" type="text" placeholder="Descrivi ciò che vuoi guardare..." />
+      <button class="btn" type="submit">📨 Invia</button>
+    </form>
+  </section>
+
+  <!-- Settings Modal -->
+  <div id="settingsModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>⚙️ Impostazioni LLM</h2>
+        <button id="closeSettingsBtn" class="btn-close">✕</button>
+      </div>
+      
+      <div class="modal-body">
+        <div class="setting-group">
+          <label for="providerSelect">Provider LLM:</label>
+          <select id="providerSelect" class="form-select">
+            <option value="websim">WebSim (Default)</option>
+            <option value="github">GitHub Models</option>
+            <option value="huggingface">Hugging Face</option>
+            <option value="openai">OpenAI</option>
+          </select>
+        </div>
+
+        <!-- WebSim Config (no additional setup needed) -->
+        <div class="provider-config" data-provider="websim">
+          <div class="provider-info">
+            <p>✅ WebSim è il provider predefinito e non richiede configurazione aggiuntiva.</p>
+          </div>
+        </div>
+
+        <!-- GitHub Models Config -->
+        <div class="provider-config" data-provider="github">
+          <div class="setting-group">
+            <label for="githubToken">GitHub Token:</label>
+            <input type="password" id="githubToken" class="form-input" placeholder="ghp_xxxxxxxxxxxx">
+            <small>Ottieni il tuo token da <a href="https://github.com/settings/tokens" target="_blank" rel="noopener">GitHub Settings</a></small>
+          </div>
+          <div class="setting-group">
+            <label for="githubModel">Modello:</label>
+            <select id="githubModel" class="form-select">
+              <option value="">Seleziona modello...</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Hugging Face Config -->
+        <div class="provider-config" data-provider="huggingface">
+          <div class="setting-group">
+            <label for="huggingfaceToken">Hugging Face Token:</label>
+            <input type="password" id="huggingfaceToken" class="form-input" placeholder="hf_xxxxxxxxxxxx">
+            <small>Ottieni il tuo token da <a href="https://huggingface.co/settings/tokens" target="_blank" rel="noopener">Hugging Face Settings</a></small>
+          </div>
+          <div class="setting-group">
+            <label for="huggingfaceModel">Modello:</label>
+            <select id="huggingfaceModel" class="form-select">
+              <option value="">Seleziona modello...</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- OpenAI Config -->
+        <div class="provider-config" data-provider="openai">
+          <div class="setting-group">
+            <label for="openaiToken">OpenAI API Key:</label>
+            <input type="password" id="openaiToken" class="form-input" placeholder="sk-xxxxxxxxxxxx">
+            <small>Ottieni la tua API key da <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener">OpenAI Platform</a></small>
+          </div>
+          <div class="setting-group">
+            <label for="openaiModel">Modello:</label>
+            <select id="openaiModel" class="form-select">
+              <option value="">Seleziona modello...</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button id="refreshModelsBtn" class="btn secondary">🔄 Aggiorna Modelli</button>
+        <button id="saveSettingsBtn" class="btn">💾 Salva</button>
+      </div>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <small>Riproduzione via iframe, senza API ufficiali di YouTube.</small>
+  </footer>
+
+  <script type="module" src="./main.js"></script>
+</body>
+
+</html>
