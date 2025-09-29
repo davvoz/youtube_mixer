@@ -11,7 +11,6 @@ import {
   tokenInputs,
   modelSelects,
   refreshModelsBtn,
-  saveSettingsBtn,
   settingsModal,
   llmIndicator
 } from "./domRefs.js";

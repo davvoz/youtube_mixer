@@ -34,8 +34,16 @@ export function embedUrl(id, { autoplay = false, mute = false } = {}) {
     controls: "1",
     rel: "0",
     modestbranding: "1",
-    playsinline: "1"
+    playsinline: "1",
+    enablejsapi: "1"
   });
+
+  if (typeof window !== "undefined") {
+    const { origin, protocol } = window.location || {};
+    if (origin && (protocol === "http:" || protocol === "https:")) {
+      params.set("origin", origin);
+    }
+  }
 
   return `https://www.youtube-nocookie.com/embed/${id}?${params.toString()}`;
 }
